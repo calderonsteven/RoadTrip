@@ -1,0 +1,73 @@
+<html>
+ <head>  
+	<style>
+		#imgTest{ width: 100px; height: 100px;}
+	</style>
+ </head>
+ <body> 	
+	<textarea id="exifData" ></textarea>
+	<br>
+	<button id="btnLoad">load, extract exif, calculate Latitude & Longitude</button>	
+	<br>
+	<img id="imgTest" src="" / >
+	<br>
+	<div id="map" style="width: 300px; height: 300px;float:left;"></div>	
+	
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://www.nihilogic.dk/labs/binaryajax/binaryajax.js"></script>
+	<script src="http://www.nihilogic.dk/labs/exif/exif.js"></script>
+	<!--<script src="http://www.nihilogic.dk/labs/exifjquery/jquery.exif.js"></script>-->	
+	<script src="http://maps.google.com/maps?file=api&amp;key=AIzaSyCcCKiU3CdLVwprqErPNyQAj56jvxE_lp0"></script>
+
+	
+	<script>
+		var oMap = new GMap2(document.getElementById("map"));
+		var oMarker;
+
+		$("#btnLoad").click(function() {
+			extractGeoInfo("test.jpg");
+			
+			//XMLHttpRequest cannot load file.jpg. Origin http://169.174.89.82:8080 is not allowed by Access-Control-Allow-Origin.
+			//extractGeoInfo("http://www.nihilogic.dk/labs/gps_exif_google_maps/2499354012_a824fdc23f.jpg");			
+		});
+
+		function extractGeoInfo(imgSrc){
+			//http://www.nihilogic.dk/labs/exifjquery/
+			//http://www.nihilogic.dk/labs/gps_exif_google_maps/
+			
+			var oImg = new Image();  
+			oImg.onload = function() {  
+				EXIF.getData(oImg,   
+					function() {  
+						var aLat = EXIF.getTag(oImg, "GPSLatitude");  
+						var aLong = EXIF.getTag(oImg, "GPSLongitude");  
+			  
+						if (!(aLat && aLong)) { alert("whoops, no GPS info "); return; } // whoops, no GPS info  
+			  
+						// convert from deg/min/sec to decimal for Google  
+						var strLatRef = EXIF.getTag(oImg, "GPSLatitudeRef") || "N";  
+						var strLongRef = EXIF.getTag(oImg, "GPSLongitudeRef") || "W";  
+						var fLat = (aLat[0] + aLat[1]/60 + aLat[2]/3600) * (strLatRef == "N" ? 1 : -1);  
+						var fLong = (aLong[0] + aLong[1]/60 + aLong[2]/3600) * (strLongRef == "W" ? -1 : 1);  
+			  
+						// center the google map and add a marker  
+						oMap.setCenter(new GLatLng(fLat, fLong), 13);  
+						oMarker = new GMarker(new GLatLng(fLat, fLong));  
+						oMap.addOverlay(oMarker);  
+						
+						//only for debug
+						var msg = "GPSLatitude:"+ fLat + ", GPSLongitude:"+ fLong;						
+						$("#exifData").html(msg);
+						//console.log(msg);		
+						//alert(msg);
+						$("#imgTest").attr("src", oImg.src);
+						//only for debug
+					}  
+				);  
+			}  
+				  
+			oImg.src = imgSrc;		
+		}
+	</script>
+ </body> 
+</html>
